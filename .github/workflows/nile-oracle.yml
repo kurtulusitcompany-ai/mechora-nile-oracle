@@ -1,0 +1,35 @@
+name: Mechora Nile TRX reference oracle
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mechora-nile-oracle
+  cancel-in-progress: false
+
+jobs:
+  update_reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - name: Test oracle reference data handling
+        run: python -m unittest discover -s tests -v
+      - name: Read CoinGecko and optionally update TRON Nile
+        run: python oracle.py
+        env:
+          MCH_CONTRACT_ADDRESS: ${{ vars.MCH_CONTRACT_ADDRESS }}
+          UPDATE_FUNCTION: ${{ vars.UPDATE_FUNCTION }}
+          ENABLE_NILE_WRITES: ${{ vars.ENABLE_NILE_WRITES }}
+          NILE_ORACLE_PRIVATE_KEY: ${{ secrets.NILE_ORACLE_PRIVATE_KEY }}
+          COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
